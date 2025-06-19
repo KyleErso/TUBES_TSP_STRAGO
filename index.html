@@ -4,12 +4,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visualisasi TSP & Semua Rute Jalan (dengan Cache)</title>
+  <title>Visualisasi TSP</title>
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="styles.css" />
 
   <style>
     /* Base Styles */
@@ -17,14 +15,21 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     html,
     body {
       height: 100%;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow: hidden;
+      background: linear-gradient(135deg, #1a1f2b 0%, #2c3e50 100%);
+      color: #f0f0f0;
+      transition: background 0.5s ease;
+    }
+
+    .light-mode {
       background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      color: #2c3e50;
     }
 
     #app-container {
@@ -35,106 +40,197 @@
 
     /* Sidebar Styles */
     #sidebar {
-      width: 320px;
+      width: 360px;
       height: 100vh;
-      /* Pastikan tinggi penuh viewport */
-      background: linear-gradient(160deg, #ffffff 0%, #f8f9fa 100%);
-      border-right: 1px solid rgba(0, 0, 0, 0.05);
+      background: linear-gradient(160deg, #1e2a38 0%, #2c3e50 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
       overflow-y: auto;
-      /* Aktifkan scroll vertikal */
-      padding: 20px;
-      box-shadow: 3px 0 15px rgba(0, 0, 0, 0.08);
+      padding: 25px;
+      box-shadow: 5px 0 20px rgba(0, 0, 0, 0.3);
       display: flex;
       flex-direction: column;
       position: relative;
       z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .light-mode #sidebar {
+      background: linear-gradient(160deg, #ffffff 0%, #f8f9fa 100%);
+      border-right: 1px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 3px 0 15px rgba(0, 0, 0, 0.08);
     }
 
     .sidebar-header {
       text-align: center;
-      padding-bottom: 20px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .light-mode .sidebar-header {
       border-bottom: 1px solid #eaeaea;
-      margin-bottom: 20px;
     }
 
     .sidebar-header h1 {
-      font-size: 1.5rem;
-      color: #2c3e50;
-      margin-bottom: 5px;
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 8px;
       font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .light-mode .sidebar-header h1 {
+      color: #2c3e50;
     }
 
     .sidebar-header p {
-      color: #7f8c8d;
-      font-size: 0.9rem;
+      color: #a0b1c5;
+      font-size: 1rem;
+      line-height: 1.6;
     }
 
-    /* Control Group Styles */
-    #controls {
-      padding: 20px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-      margin-bottom: 20px;
+    .light-mode .sidebar-header p {
+      color: #7f8c8d;
+    }
+
+    /* Theme Toggle Button */
+    #theme-toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: rgba(30, 41, 59, 0.7);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
       transition: all 0.3s ease;
     }
 
-    #controls:hover {
+    .light-mode #theme-toggle {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    #theme-toggle i {
+      color: #f0f0f0;
+      font-size: 1.2rem;
+    }
+
+    .light-mode #theme-toggle i {
+      color: #2c3e50;
+    }
+
+    #theme-toggle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Section Styling */
+    .section-container {
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .light-mode .section-container {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      border: none;
+    }
+
+    .section-container:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      border-color: rgba(52, 152, 219, 0.3);
+    }
+
+    .light-mode .section-container:hover {
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     }
 
-    #controls h3 {
-      margin-top: 0;
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.25rem;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .light-mode .section-title {
       color: #2c3e50;
       border-bottom: 1px solid #f0f0f0;
-      padding-bottom: 12px;
-      font-size: 1.2rem;
+    }
+
+    .section-title i {
+      color: #3498db;
+      font-size: 1.2em;
+    }
+
+    /* Control Group Styles */
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: #a0b1c5;
+      font-size: 0.95rem;
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .control-group {
-      margin-bottom: 20px;
-    }
-
-    .control-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
+    .light-mode .input-group label {
       color: #34495e;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
-    .control-group select,
-    .control-group input,
-    .control-group button {
+    .input-group label i {
+      width: 24px;
+      text-align: center;
+    }
+
+    .input-group select,
+    .input-group input {
       width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #e0e6ed;
-      border-radius: 8px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      background: rgba(20, 30, 48, 0.6);
+      color: #f0f0f0;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .light-mode .input-group select,
+    .light-mode .input-group input {
       background: white;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-      transition: all 0.2s ease;
+      color: #2c3e50;
+      border: 1px solid #e0e6ed;
     }
 
-    .control-group select {
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-      background-position: right 0.75rem center;
-      background-repeat: no-repeat;
-      background-size: 1.25em 1.25em;
-      padding-right: 2.5rem;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-    }
-
-    .control-group select:focus,
-    .control-group input:focus {
+    .input-group select:focus,
+    .input-group input:focus {
       outline: none;
       border-color: #3498db;
       box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
@@ -143,119 +239,110 @@
     .btn-group {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 10px;
+      gap: 15px;
+      margin-top: 15px;
     }
 
     #controls button {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 14px;
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      gap: 10px;
+      font-size: 1rem;
+      border: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
     }
 
     #controls button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
     }
 
     #controls button:active {
-      transform: translateY(0);
+      transform: translateY(1px);
     }
 
+    /* Tombol mode gelap (malam) */
     #controls button#runTSP {
       background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
     }
 
     #controls button#runTSP:hover {
-      background: linear-gradient(135deg, #c0392b 0%, #a53125 100%);
+      background: linear-gradient(135deg, #ff6b54 0%, #e74c3c 100%);
     }
 
     #controls button#resetBtn {
-      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
     }
 
     #controls button#resetBtn:hover {
+      background: linear-gradient(135deg, #3ca0db 0%, #3498db 100%);
+    }
+
+    /* Tombol mode terang (siang) */
+    .light-mode #controls button#runTSP {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .light-mode #controls button#runTSP:hover {
+      background: linear-gradient(135deg, #c0392b 0%, #a53125 100%);
+    }
+
+    .light-mode #controls button#resetBtn {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    }
+
+    .light-mode #controls button#resetBtn:hover {
       background: linear-gradient(135deg, #7f8c8d 0%, #6c7a89 100%);
     }
 
     /* Legend Styles */
-    #legend {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-      margin-top: 20px;
-      transition: all 0.3s ease;
-    }
-
-    #legend:hover {
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    }
-
-    #legend h3 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 1px solid #f0f0f0;
-      padding-bottom: 12px;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
     .legend-item {
       display: flex;
       align-items: center;
-      margin-bottom: 12px;
-      font-size: 0.95rem;
+      margin-bottom: 15px;
+      font-size: 1rem;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: rgba(30, 41, 59, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .light-mode .legend-item {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .legend-item:hover {
+      background: rgba(30, 41, 59, 0.8);
+      transform: translateX(5px);
+    }
+
+    .light-mode .legend-item:hover {
+      background: rgba(255, 255, 255, 0.9);
     }
 
     .legend-color {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 4px;
-      margin-right: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-right: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
     /* Location Info Styles */
     #location-info {
       flex-grow: 1;
-      background: white;
-      padding: 24px 20px 24px 20px;
-      border-radius: 14px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-      margin-top: 10px;
-      min-height: 180px;
-      max-height: 340px;
+      padding: 0;
+      min-height: 200px;
+      max-height: 320px;
       overflow-y: auto;
-      transition: all 0.3s ease;
-    }
-
-    #location-info:hover {
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    }
-
-    #location-info h3 {
-      margin-top: 0;
-      color: #2c3e50;
-      border-bottom: 1px solid #f0f0f0;
-      padding-bottom: 12px;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     #locations-list {
@@ -265,183 +352,144 @@
     }
 
     #locations-list li {
-      padding: 14px 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 0.95rem;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 1rem;
       display: flex;
       align-items: center;
       transition: all 0.2s ease;
+      background: rgba(30, 41, 59, 0.4);
+      margin-bottom: 8px;
+      border-radius: 8px;
+    }
+
+    .light-mode #locations-list li {
+      background: rgba(255, 255, 255, 0.7);
+      border-bottom: 1px solid #f0f0f0;
     }
 
     #locations-list li:hover {
-      background-color: #f8f9fa;
-      border-radius: 6px;
+      background: rgba(30, 41, 59, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .light-mode #locations-list li:hover {
+      background: #f8f9fa;
     }
 
     #locations-list li:last-child {
       border-bottom: none;
+      margin-bottom: 0;
     }
 
     .location-number {
       background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
       color: white;
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 14px;
+      margin-right: 16px;
       flex-shrink: 0;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: bold;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
     }
 
     .location-name {
       flex-grow: 1;
-      color: #34495e;
+      color: #e2e8f0;
       font-weight: 500;
+    }
+
+    .light-mode .location-name {
+      color: #34495e;
     }
 
     /* Map Container Styles */
     #map-container {
       flex-grow: 1;
       position: relative;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
     }
 
     #map {
       width: 100%;
       height: 100%;
       z-index: 1;
+      transition: filter 0.5s ease;
     }
 
-    #loading-spinner {
-      border: 3px solid rgba(243, 243, 243, 0.8);
-      border-top: 3px solid #3498db;
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    @keyframes modalFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    #modal-info {
-      background: #f8f9fa;
-      padding: 18px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-
-    #modal-info p {
-      margin: 10px 0;
-      font-size: 1rem;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    #distance-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-      font-size: 0.95rem;
-    }
-
-    #distance-list li {
-      padding: 14px 0;
-      border-bottom: 1px solid #f0f0f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s ease;
-    }
-
-    #distance-list li:hover {
-      background-color: #f8f9fa;
-      border-radius: 6px;
-    }
-
-    #distance-list li:last-child {
-      border-bottom: none;
-    }
-
-    .dist-value {
-      font-weight: bold;
-      color: #e74c3c;
-      font-size: 1.05rem;
-    }
-
-    /* Watermark Styles */
-    .watermark {
+    /* Route Label */
+    #routeLabel {
       position: absolute;
-      bottom: 20px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 500;
-      background: rgba(255, 255, 255, 0.85);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      color: #7f8c8d;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(4px);
+      background: rgba(30, 41, 59, 0.95);
+      padding: 16px 30px;
+      border-radius: 50px;
+      font-size: 1.5rem;
+      color: #fff;
+      z-index: 1000;
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
       font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      text-align: center;
+      max-width: 80%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.3s ease;
     }
 
-    /* Tambahkan ke file styles.css atau di dalam tag <style> */
-#routeLabel {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
-  padding: 12px 20px;
-  border-radius: 4px;
-  font-size: 1.4rem; /* Perbesar tulisan */
-  color: #333;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
+    .light-mode #routeLabel {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      border: none;
+    }
 
-/* Pseudo-element sebagai panah di bawah label */
-#routeLabel::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 10px 10px 0 10px;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
-}
+    /* Custom marker style */
+    .custom-marker {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      text-align: center;
+      color: white;
+      font-size: 0.95rem;
+      line-height: 32px;
+      font-weight: bold;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    }
 
-/* Responsive design */
-    @media (max-width: 768px) {
+    .distance-label {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: rgba(30, 41, 59, 0.43);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+      border-radius: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(2px);
+    }
+
+    .light-mode .distance-label {
+      background-color: #ffffff;
+      color: #380000;
+      border: none;
+    }
+
+    /* Responsive design */
+    @media (max-width: 992px) {
       #app-container {
         flex-direction: column;
       }
@@ -451,125 +499,124 @@
         height: auto;
         max-height: 50vh;
         border-right: none;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px;
+      }
+
+      .light-mode #sidebar {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       }
 
       #map-container {
         height: 50vh;
       }
 
-      .watermark {
-        bottom: 10px;
-        right: 10px;
-        font-size: 0.75rem;
+      #routeLabel {
+        top: 10px;
+        font-size: 1.2rem;
+        padding: 12px 20px;
       }
     }
 
-    /* Custom marker style */
-    .custom-marker {
-      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      text-align: center;
-      color: white;
-      font-size: 0.85rem;
-      line-height: 28px;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    @media (max-width: 576px) {
+      .sidebar-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .section-container {
+        padding: 15px;
+      }
+
+      .btn-group {
+        grid-template-columns: 1fr;
+      }
+
+      #routeLabel {
+        font-size: 1rem;
+        padding: 10px 15px;
+      }
     }
 
-  /* Ganti warna label jarak jadi hitam */
-.distance-label {
-  color: #380000;                  /* teks hitam */
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-
-
-    /* Section Title */
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      color: #2c3e50;
-      font-weight: 700;
-      font-size: 1.2rem;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #f0f0f0;
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
     }
 
-    /* Input Group */
-    .input-group {
-      margin-bottom: 15px;
+    ::-webkit-scrollbar-track {
+      background: rgba(30, 41, 59, 0.2);
+      border-radius: 4px;
     }
 
-    .input-group label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      color: #34495e;
-      font-size: 0.9rem;
+    .light-mode ::-webkit-scrollbar-track {
+      background: rgba(30, 41, 59, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(52, 152, 219, 0.5);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(52, 152, 219, 0.7);
     }
   </style>
 </head>
 
 <body>
-  <div id="app-container">
-    <!-- Watermark -->
+  <!-- Tempatkan tombol dark mode di sini -->
+  <button id="theme-toggle" title="Toggle Dark Mode">
+    <i class="fas fa-moon"></i>
+  </button>
 
+  <div id="app-container">
     <div id="sidebar">
+
       <div class="sidebar-header">
         <h1><i class="fas fa-route"></i> Visualisasi TSP</h1>
         <p>Optimasi Rute Perjalanan dengan Algoritma Greedy</p>
       </div>
 
-      <div id="controls">
+      <div class="section-container">
         <div class="section-title">
           <i class="fas fa-sliders-h"></i> Kontrol Peta
         </div>
 
         <div class="control-group">
-          <label for="startSelect"><i class="fas fa-map-marker-alt"></i> Titik Awal:</label>
-          <select id="startSelect">
-            <option value="">-- Pilih Lokasi --</option>
-          </select>
-
-          <label for="endSelect"><i class="fas fa-flag-checkered"></i> Titik Akhir:</label>
-          <select id="endSelect">
-            <option value="">-- Pilih Lokasi --</option>
-          </select>
-
-          <div class="btn-group">
-            <button id="runTSP">
-              <i class="fas fa-route"></i> Jalankan TSP
-            </button>
+          <div class="input-group">
+            <label for="startSelect"><i class="fas fa-map-marker-alt"></i> Titik Awal:</label>
+            <select id="startSelect">
+              <option value="">-- Pilih Lokasi --</option>
+            </select>
           </div>
 
-          <button id="resetBtn">
-            <i class="fas fa-redo"></i> Reset Peta
-          </button>
-        </div>
+          <div class="input-group">
+            <label for="endSelect"><i class="fas fa-flag-checkered"></i> Titik Akhir:</label>
+            <select id="endSelect">
+              <option value="">-- Pilih Lokasi --</option>
+            </select>
+          </div>
 
-        <!-- Tambahan tombol Export Routes JSON -->
-        <div class="control-group">
+          <div id="controls" style="display: flex; gap: 15px;">
+            <button id="runTSP">
+              <i class="fas fa-bolt"></i> Jalankan TSP
+            </button>
+            <button id="resetBtn">
+              <i class="fas fa-undo"></i> Reset Peta
+            </button>
+          </div>
         </div>
       </div>
-      <div id="location-info">
+
+      <div class="section-container">
         <div class="section-title">
           <i class="fas fa-location-dot"></i> Daftar Lokasi
         </div>
-        <ul id="locations-list"></ul>
+        <div id="location-info">
+          <ul id="locations-list"></ul>
+        </div>
       </div>
 
-      <div id="legend">
+      <div class="section-container">
         <div class="section-title">
           <i class="fas fa-map-signs"></i> Legenda
         </div>
@@ -587,10 +634,10 @@
           <span>Rute TSP (Traveling Salesman)</span>
         </div>
       </div>
-
     </div>
-    <!-- Map Container -->
-    <div id="routeLabel"></div>
+
+    <div id="routeLabel">Pilih titik awal dan akhir untuk memulai</div>
+
     <div id="map-container">
       <div id="map"></div>
     </div>
@@ -600,7 +647,11 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Leaflet.AntPath (animasi garis) -->
   <script src="https://cdn.jsdelivr.net/npm/leaflet-ant-path@1.3.0/dist/leaflet-ant-path.min.js"></script>
-    <script>
+  <script>
+    // Deklarasi variabel global
+    let map, markers = [], routePolylines = [], startEndPolyline = null,
+      allRoadPolylines = [], distanceLabels = [];
+
     // 1. Daftar 21 lokasi (0–20)
     const locations = [
       { name: "Universitas Kristen Maranatha", lat: -6.8856410113914785, lng: 107.58102914100107 },
@@ -628,168 +679,369 @@
 
     // 2. Cache manual dengan bobot (jarak km)
     const manualRouteCache = {
-      "0-2": 3.6,  "0-15": 2.6, "0-13": 2.2, "0-16": 0.6, "0-17": 2.7,
-      "1-2": 0.8,  "2-4": 3.0,  "2-5": 1.4, "3-0": 3.4,  "3-1": 2.8,
-      "4-8": 2.3,  "4-20": 1.3, "5-6": 0.3, "6-11": 1.2, "7-4": 1,
-      "11-19": 2.5,"8-9": 0.5,  "9-19": 0.6,"12-19": 2.0,"10-11":0.5,
-      "10-7": 0.8, "14-17": 0.9,"11-12":0.7,"11-14":0.8,"16-13":1.0,
-      "16-17":2.9, "15-13":1.9, "17-11":1.0,"8-19":1.2, "20-18":1.9,
-      "18-19":1.3
+      "0-2": 3.6, "0-3": 3.4, "0-13": 2.2, "0-15": 2.5, "0-16": 0.6,
+      "0-17": 2.7, "1-2": 2.3, "1-3": 2.8, "2-4": 3.0, "2-5": 1.4,
+      "4-7": 1.0, "4-20": 1.3, "5-6": 0.3, "6-11": 1.2, "7-10": 0.8,
+      "8-9": 0.5, "8-19": 1.2, "9-19": 0.6, "9-20": 1.2, "10-11": 0.5,
+      "11-12": 2.3, "11-14": 0.8, "11-17": 1.0, "11-19": 2.5, "12-19": 2.0,
+      "13-15": 1.9, "13-16": 1.0, "14-17": 0.9, "16-17": 1.5, "18-19": 1.3,
+      "18-20": 1.9
     };
 
     // 3. Matriks jarak
     let distanceMatrix = null;
+
     function buildDistanceMatrix() {
       const n = locations.length;
-      distanceMatrix = Array.from({length:n}, () => Array(n).fill(Infinity));
-      for (let i=0; i<n; i++) distanceMatrix[i][i] = 0;
+      distanceMatrix = Array.from({ length: n }, () => Array(n).fill(Infinity));
+
+      for (let i = 0; i < n; i++) {
+        distanceMatrix[i][i] = 0;
+      }
+
       for (const k in manualRouteCache) {
-        const [i,j] = k.split('-').map(Number);
+        const [i, j] = k.split('-').map(Number);
         const w = manualRouteCache[k];
         distanceMatrix[i][j] = distanceMatrix[j][i] = w;
       }
     }
 
     // 4. Inisialisasi peta
-    let map, markers = [], routePolylines = [], startEndPolyline = null, allRoadPolylines = [], distanceLabels = [];
     function initMap() {
+      // Buat peta dengan layer dasar
       map = L.map('map').setView([-6.9175, 107.6191], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+      // Layer untuk mode gelap
+      const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors, &copy; CARTO'
+      });
+
+      // Layer untuk mode terang
+      const lightLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+      });
+
+      // Tambahkan layer gelap sebagai default
+      darkLayer.addTo(map);
+
+      // Simpan referensi layer untuk nanti di-toggle
+      window.mapLayers = {
+        dark: darkLayer,
+        light: lightLayer
+      };
     }
 
     // 5. Tempatkan marker
     function placeMarkers() {
-      markers.forEach(m=>map.removeLayer(m)); markers = [];
-      locations.forEach((loc,i)=>{
-        const icon = L.divIcon({html:`<div class="custom-marker">${i+1}</div>`, className:'', iconSize:[28,28], iconAnchor:[14,14]});
-        const m = L.marker([loc.lat, loc.lng], {icon}).addTo(map).bindPopup(`<b>${i+1}. ${loc.name}</b>`);
-        markers.push(m);
+      // Hapus marker lama jika ada
+      markers.forEach(marker => {
+        if (map.hasLayer(marker)) {
+          map.removeLayer(marker);
+        }
+      });
+
+      markers = [];
+
+      // Tambahkan marker baru
+      locations.forEach((loc, i) => {
+        const icon = L.divIcon({
+          html: `<div class="custom-marker">${i + 1}</div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const marker = L.marker([loc.lat, loc.lng], { icon })
+          .addTo(map)
+          .bindPopup(`<b>${i + 1}. ${loc.name}</b>`);
+
+        markers.push(marker);
       });
     }
 
     // 6. Gambar semua rute manual + label
     function drawManualRoutes() {
-      allRoadPolylines.forEach(l=>map.removeLayer(l)); allRoadPolylines = [];
-      distanceLabels.forEach(l=>map.removeLayer(l)); distanceLabels = [];
+      // Hapus polyline dan label lama
+      allRoadPolylines.forEach(polyline => {
+        if (map.hasLayer(polyline)) {
+          map.removeLayer(polyline);
+        }
+      });
+      allRoadPolylines = [];
+
+      distanceLabels.forEach(label => {
+        if (map.hasLayer(label)) {
+          map.removeLayer(label);
+        }
+      });
+      distanceLabels = [];
+
+      // Gambar rute baru
       for (const k in manualRouteCache) {
-        const w = manualRouteCache[k], [i,j] = k.split('-').map(Number);
-        const latlngs = [[locations[i].lat,locations[i].lng],[locations[j].lat,locations[j].lng]];
-        const pl = L.polyline(latlngs, {color:'#000',weight:4,opacity:0.7}).addTo(map);
-        allRoadPolylines.push(pl);
-        const mid = [(locations[i].lat+locations[j].lat)/2,(locations[i].lng+locations[j].lng)/2];
-        const lbl = L.marker(mid, {icon:L.divIcon({className:'distance-label',html:`${w} km`})}).addTo(map);
-        distanceLabels.push(lbl);
+        const w = manualRouteCache[k];
+        const [i, j] = k.split('-').map(Number);
+
+        const latlngs = [
+          [locations[i].lat, locations[i].lng],
+          [locations[j].lat, locations[j].lng]
+        ];
+
+        const polyline = L.polyline(latlngs, {
+          color: '#20c997',
+          weight: 4,
+          opacity: 0.9
+        }).addTo(map);
+
+        allRoadPolylines.push(polyline);
+
+        const mid = [
+          (locations[i].lat + locations[j].lat) / 2,
+          (locations[i].lng + locations[j].lng) / 2
+        ];
+
+        const label = L.marker(mid, {
+          icon: L.divIcon({
+            className: 'distance-label',
+            html: `${w} km`,
+            iconSize: null
+          })
+        }).addTo(map);
+
+        distanceLabels.push(label);
       }
     }
 
-    // 7. Dijkstra
+    // 7. Algoritma Dijkstra
     function dijkstra(start, end) {
       const n = locations.length;
-      const dist = Array(n).fill(Infinity), prev = Array(n).fill(null), visited = Array(n).fill(false);
+      const dist = Array(n).fill(Infinity);
+      const prev = Array(n).fill(null);
+      const visited = Array(n).fill(false);
+
       dist[start] = 0;
-      for (let iter=0; iter<n; iter++) {
-        let u=-1, best=Infinity;
-        for (let i=0;i<n;i++) if(!visited[i] && dist[i]<best){best=dist[i];u=i;}
-        if(u<0) break;
-        visited[u]=true;
-        for(let v=0;v<n;v++){
-          if(!visited[v] && distanceMatrix[u][v]<Infinity){
-            const alt=dist[u]+distanceMatrix[u][v];
-            if(alt<dist[v]){dist[v]=alt; prev[v]=u;}
+
+      for (let iter = 0; iter < n; iter++) {
+        let u = -1;
+        let best = Infinity;
+
+        for (let i = 0; i < n; i++) {
+          if (!visited[i] && dist[i] < best) {
+            best = dist[i];
+            u = i;
+          }
+        }
+
+        if (u < 0) break;
+        visited[u] = true;
+
+        for (let v = 0; v < n; v++) {
+          if (!visited[v] && distanceMatrix[u][v] < Infinity) {
+            const alt = dist[u] + distanceMatrix[u][v];
+            if (alt < dist[v]) {
+              dist[v] = alt;
+              prev[v] = u;
+            }
           }
         }
       }
-      const path = []; let u=end;
-      while(u!==null){path.unshift(u); u=prev[u];}
+
+      const path = [];
+      let u = end;
+
+      while (u !== null) {
+        path.unshift(u);
+        u = prev[u];
+      }
+
       return path;
     }
 
-    // 8. Gambar rute shortest path dengan animasi dan tampilan bobot rute
+    // 8. Gambar rute TSP
     function drawRoutes(start, end) {
       // Hapus rute lama
-      routePolylines.forEach(l => map.removeLayer(l));
+      routePolylines.forEach(polyline => {
+        if (map.hasLayer(polyline)) {
+          map.removeLayer(polyline);
+        }
+      });
       routePolylines = [];
-      if(startEndPolyline) {
+
+      if (startEndPolyline && map.hasLayer(startEndPolyline)) {
         map.removeLayer(startEndPolyline);
+        startEndPolyline = null;
       }
 
-      // Hitung jalur Dijkstra
+      // Hitung jalur terpendek
       const path = dijkstra(start, end);
-      if (path.length < 2) return alert('Tidak ada jalur terhubung.');
-      
-      let totalWeight = 0;
-      
-      // Gambar setiap segmen dengan antPath dan hitung bobot total
-      for (let i = 0; i < path.length - 1; i++) {
-        const P = locations[path[i]], Q = locations[path[i + 1]];
-        // Gunakan key yang konsisten
-        const key = path[i] < path[i + 1] ? `${path[i]}-${path[i+1]}` : `${path[i+1]}-${path[i]}`;
-        const w = manualRouteCache[key] ? manualRouteCache[key] : 0;
-        totalWeight += w;
-        
-        const antPl = L.polyline.antPath([[P.lat, P.lng], [Q.lat, Q.lng]], {
-          color: '#e74c3c',
-          weight: 4,
-          opacity: 0.9,
-          delay: 400,
-          dashArray: [10, 20],
-          pulseColor: '#f9c74f'
-        }).addTo(map);
-        routePolylines.push(antPl);
+
+      if (path.length < 2) {
+        alert('Tidak ada jalur terhubung.');
+        return;
       }
-      
-      // Buat string rute (misal: "8 - 11 - 12 - 18")
-      const routeString = path.map(idx => idx + 1).join(" - ");
-      const labelText = `${routeString} = ${totalWeight.toFixed(1)} km`;
-      
-      // Update isi elemen label di atas peta
+
+      let totalWeight = 0;
+
+      // Gambar setiap segmen rute
+      for (let i = 0; i < path.length - 1; i++) {
+        const current = locations[path[i]];
+        const next = locations[path[i + 1]];
+
+        // Gunakan key yang konsisten
+        const key = path[i] < path[i + 1] ?
+          `${path[i]}-${path[i + 1]}` :
+          `${path[i + 1]}-${path[i]}`;
+
+        const w = manualRouteCache[key] || 0;
+        totalWeight += w;
+
+        const antPath = L.polyline.antPath(
+          [[current.lat, current.lng], [next.lat, next.lng]],
+          {
+            color: '#ff6b54',
+            weight: 6,
+            opacity: 0.95,
+            delay: 300,
+            dashArray: [10, 20],
+            pulseColor: '#ffd166'
+          }
+        ).addTo(map);
+
+        routePolylines.push(antPath);
+      }
+
+      // Format rute untuk ditampilkan
+      const routeString = path.map(idx => idx + 1).join(" → ");
+      const labelText = `Rute: ${routeString} | Jarak: ${totalWeight.toFixed(1)} km`;
+
+      // Update label rute
       document.getElementById("routeLabel").innerHTML = labelText;
     }
 
     // 9. Populate dropdown & list
     function populateControls() {
-      const s=document.getElementById('startSelect'), e=document.getElementById('endSelect'), ul=document.getElementById('locations-list');
-      locations.forEach((loc,i)=>{
-        // dropdown
-        [s,e].forEach(sel=>{
-          const opt=document.createElement('option');
-          opt.value=i; opt.textContent=`${i+1}. ${loc.name}`;
-          sel.appendChild(opt);
-        });
-        // list
-        const li=document.createElement('li');
-        li.textContent=`${i+1}. ${loc.name}`;
-        ul.appendChild(li);
+      const startSelect = document.getElementById('startSelect');
+      const endSelect = document.getElementById('endSelect');
+      const locationsList = document.getElementById('locations-list');
+
+      // Kosongkan dulu
+      while (startSelect.options.length > 1) startSelect.remove(1);
+      while (endSelect.options.length > 1) endSelect.remove(1);
+      locationsList.innerHTML = '';
+
+      // Tambahkan opsi lokasi
+      locations.forEach((loc, i) => {
+        // Dropdown
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i + 1}. ${loc.name}`;
+        startSelect.appendChild(option.cloneNode(true));
+        endSelect.appendChild(option);
+
+        // List
+        const li = document.createElement('li');
+
+        const numDiv = document.createElement('div');
+        numDiv.className = 'location-number';
+        numDiv.textContent = i + 1;
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'location-name';
+        nameDiv.textContent = loc.name;
+
+        li.appendChild(numDiv);
+        li.appendChild(nameDiv);
+        locationsList.appendChild(li);
       });
     }
 
     // 10. Reset
     function resetAll() {
-      routePolylines.forEach(l=>map.removeLayer(l)); routePolylines=[];
-      startEndPolyline && map.removeLayer(startEndPolyline); startEndPolyline=null;
+      // Hapus rute TSP
+      routePolylines.forEach(polyline => {
+        if (map.hasLayer(polyline)) {
+          map.removeLayer(polyline);
+        }
+      });
+      routePolylines = [];
+
+      // Hapus polyline titik awal/akhir jika ada
+      if (startEndPolyline && map.hasLayer(startEndPolyline)) {
+        map.removeLayer(startEndPolyline);
+        startEndPolyline = null;
+      }
+
+      // Reset dropdown
+      document.getElementById('startSelect').value = '';
+      document.getElementById('endSelect').value = '';
+
+      // Reset label rute
+      document.getElementById("routeLabel").innerHTML = "Pilih titik awal dan akhir untuk memulai";
+
+      // Gambar ulang rute manual
       drawManualRoutes();
     }
 
-    // 11. Init
-    window.onload = () => {
+    // 11. Toggle tema
+    function toggleTheme() {
+      const body = document.body;
+      const themeToggle = document.getElementById('theme-toggle');
+      const isDarkMode = !body.classList.contains('light-mode');
+
+      if (isDarkMode) {
+        // Aktifkan mode terang
+        body.classList.add('light-mode');
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        themeToggle.title = 'Aktifkan Mode Gelap';
+
+        // Ganti layer peta
+        if (window.mapLayers) {
+          window.mapLayers.dark.remove();
+          window.mapLayers.light.addTo(map);
+        }
+      } else {
+        // Aktifkan mode gelap
+        body.classList.remove('light-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        themeToggle.title = 'Aktifkan Mode Terang';
+
+        // Ganti layer peta
+        if (window.mapLayers) {
+          window.mapLayers.light.remove();
+          window.mapLayers.dark.addTo(map);
+        }
+      }
+
+      // Perbarui tampilan marker dan polyline
+      placeMarkers();
+      drawManualRoutes();
+    }
+
+    // 12. Inisialisasi aplikasi
+    window.onload = function () {
+      // Inisialisasi komponen
       initMap();
       buildDistanceMatrix();
       placeMarkers();
       drawManualRoutes();
       populateControls();
 
-      document.getElementById('runTSP').onclick = () => {
-        const s=+document.getElementById('startSelect').value;
-        const e=+document.getElementById('endSelect').value;
-        if(isNaN(s)||isNaN(e)) return alert('Pilih awal & akhir');
-        drawRoutes(s,e);
-      };
-      document.getElementById('resetBtn').onclick = resetAll;
+      // Setup event listeners
+      document.getElementById('runTSP').addEventListener('click', function () {
+        const start = parseInt(document.getElementById('startSelect').value);
+        const end = parseInt(document.getElementById('endSelect').value);
+
+        if (isNaN(start) || isNaN(end)) {
+          alert('Pilih titik awal & akhir terlebih dahulu');
+          return;
+        }
+
+        drawRoutes(start, end);
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', resetAll);
+      document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
     };
   </script>
-
 </body>
 
 </html>
